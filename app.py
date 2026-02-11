@@ -11,85 +11,246 @@ from datetime import datetime
 
 # ===== Page Config =====
 st.set_page_config(
-    page_title="🎵 MP3/MP4 Downloader",
-    page_icon="🎵",
+    page_title="yt-downloader",
+    page_icon="⬇",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
 
-# ===== Custom CSS =====
+# ===== Minimal CSS with Kanit =====
 st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
-    
-    * { font-family: 'Kanit', sans-serif !important; }
-    
+    /* ── Global Font ── */
+    *, html, body, [class*="st-"], .stMarkdown, .stTextArea textarea,
+    .stSelectbox, .stRadio, .stButton button, input, select, textarea,
+    div[data-testid="stExpander"] summary span,
+    div[data-testid="stExpander"] div {
+        font-family: 'Kanit', sans-serif !important;
+    }
+
+    /* ── Background ── */
     .stApp {
-        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+        background: #0a0a0a;
     }
-    
-    .main-title {
+    section[data-testid="stSidebar"] { display: none; }
+
+    /* ── Container max-width for responsive ── */
+    .block-container {
+        max-width: 640px !important;
+        padding: 2rem 1.2rem 3rem !important;
+    }
+    @media (max-width: 640px) {
+        .block-container { padding: 1.2rem 0.8rem 2rem !important; }
+    }
+
+    /* ── Hero ── */
+    .hero {
         text-align: center;
-        font-size: 2.5rem;
-        font-weight: 600;
-        background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0;
+        padding: 2.5rem 0 1rem;
     }
-    
-    .sub-title {
-        text-align: center;
-        color: #888;
-        font-size: 1rem;
-        margin-bottom: 2rem;
+    .hero-icon {
+        font-size: 2.4rem;
+        margin-bottom: 0.3rem;
+        opacity: 0.9;
     }
-    
-    .download-card {
-        background: #1a1a1a;
-        border: 1px solid #2a2a2a;
-        border-radius: 14px;
-        padding: 1.5rem;
-        margin: 1rem 0;
+    .hero h1 {
+        font-family: 'Kanit', sans-serif !important;
+        font-weight: 500;
+        font-size: 1.75rem;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+        margin: 0;
     }
-    
-    .status-success {
-        color: #00b894;
-        font-weight: 600;
+    .hero p {
+        font-family: 'Kanit', sans-serif !important;
+        font-weight: 300;
+        color: #555;
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
     }
-    
-    .status-error {
-        color: #d63031;
-        font-weight: 600;
+
+    /* ── Cards ── */
+    .card {
+        background: #111111;
+        border: 1px solid #1e1e1e;
+        border-radius: 12px;
+        padding: 1.2rem 1.4rem;
+        margin-bottom: 0.8rem;
     }
-    
-    .log-entry {
-        font-family: 'Consolas', monospace !important;
+    .card-label {
+        font-family: 'Kanit', sans-serif !important;
+        font-weight: 400;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #444;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ── Status pill ── */
+    .pill {
+        display: inline-block;
+        font-family: 'Kanit', sans-serif !important;
+        font-size: 0.72rem;
+        font-weight: 400;
+        padding: 0.2rem 0.7rem;
+        border-radius: 20px;
+        margin-bottom: 0.6rem;
+    }
+    .pill-ok {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .pill-warn {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    /* ── Inputs ── */
+    .stTextArea textarea {
+        background: #0e0e0e !important;
+        border: 1px solid #1e1e1e !important;
+        border-radius: 10px !important;
+        color: #e0e0e0 !important;
+        font-size: 0.88rem !important;
+        transition: border-color 0.2s ease;
+    }
+    .stTextArea textarea:focus {
+        border-color: #333 !important;
+        box-shadow: none !important;
+    }
+    .stTextArea label { display: none !important; }
+
+    /* ── Select / Radio ── */
+    .stSelectbox > div > div,
+    .stRadio > div {
+        background: transparent !important;
+    }
+    .stSelectbox [data-baseweb="select"] > div {
+        background: #0e0e0e !important;
+        border: 1px solid #1e1e1e !important;
+        border-radius: 8px !important;
+    }
+
+    /* ── Buttons ── */
+    .stButton > button {
+        font-family: 'Kanit', sans-serif !important;
+        font-weight: 400;
+        border-radius: 8px;
+        border: 1px solid #1e1e1e;
+        background: #111 !important;
+        color: #ccc !important;
+        transition: all 0.2s ease;
+        font-size: 0.88rem;
+    }
+    .stButton > button:hover {
+        background: #1a1a1a !important;
+        border-color: #333 !important;
+        color: #fff !important;
+    }
+    .stButton > button[kind="primary"],
+    button[data-testid="stBaseButton-primary"] {
+        background: #fff !important;
+        color: #000 !important;
+        border: none !important;
+        font-weight: 500 !important;
+    }
+    button[data-testid="stBaseButton-primary"]:hover {
+        background: #e0e0e0 !important;
+    }
+
+    /* ── Download button ── */
+    .stDownloadButton > button {
+        background: #111 !important;
+        color: #10b981 !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        border-radius: 8px !important;
+        font-weight: 400 !important;
+        font-family: 'Kanit', sans-serif !important;
+    }
+    .stDownloadButton > button:hover {
+        background: rgba(16, 185, 129, 0.08) !important;
+        border-color: #10b981 !important;
+    }
+
+    /* ── Expander ── */
+    div[data-testid="stExpander"] {
+        background: #111;
+        border: 1px solid #1e1e1e;
+        border-radius: 10px;
+    }
+    div[data-testid="stExpander"] summary {
         font-size: 0.85rem;
         color: #888;
-        padding: 2px 0;
     }
-    
-    /* Button styling */
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+
+    /* ── Progress bar ── */
+    .stProgress > div > div {
+        background: #1e1e1e !important;
+        border-radius: 4px;
     }
-    
-    .stDownloadButton > button {
-        background: linear-gradient(135deg, #00b894, #00a381) !important;
-        color: white !important;
-        border: none !important;
+    .stProgress > div > div > div {
+        background: #fff !important;
+        border-radius: 4px;
+    }
+
+    /* ── Alerts ── */
+    .stAlert, div[data-testid="stAlert"] {
+        background: #111 !important;
+        border: 1px solid #1e1e1e !important;
         border-radius: 10px !important;
-        font-weight: 600 !important;
+        font-size: 0.85rem;
     }
-    
-    div[data-testid="stExpander"] {
-        background: #1a1a1a;
-        border: 1px solid #2a2a2a;
-        border-radius: 14px;
+
+    /* ── Divider ── */
+    hr { border-color: #1a1a1a !important; }
+
+    /* ── Results ── */
+    .result-item {
+        font-family: 'Kanit', sans-serif !important;
+        background: #111;
+        border: 1px solid #1e1e1e;
+        border-radius: 10px;
+        padding: 0.8rem 1rem;
+        margin: 0.4rem 0;
+        font-size: 0.85rem;
     }
+    .result-ok { border-left: 3px solid #10b981; }
+    .result-fail { border-left: 3px solid #ef4444; }
+    .result-item .r-title { color: #ccc; font-weight: 400; }
+    .result-item .r-sub { color: #555; font-size: 0.75rem; margin-top: 0.15rem; }
+
+    /* ── History ── */
+    .hist-item {
+        font-family: 'Kanit', sans-serif !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid #141414;
+        font-size: 0.82rem;
+    }
+    .hist-item:last-child { border-bottom: none; }
+    .hist-title { color: #aaa; flex: 1; }
+    .hist-meta { color: #444; font-size: 0.72rem; text-align: right; white-space: nowrap; margin-left: 0.8rem; }
+
+    /* ── Footer ── */
+    .footer {
+        text-align: center;
+        color: #333;
+        font-size: 0.7rem;
+        padding: 2rem 0 1rem;
+        letter-spacing: 0.03em;
+    }
+
+    /* ── Hide Streamlit branding ── */
+    #MainMenu, footer, header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -304,72 +465,75 @@ def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
 # ===== UI =====
 # ================================================================
 
-# Header
-st.markdown('<h1 class="main-title">🎵 Downloader</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">วาง URL เพื่อดาวน์โหลดเสียงหรือวิดีโอ</p>', unsafe_allow_html=True)
+# ── Hero ──
+st.markdown("""
+<div class="hero">
+    <div class="hero-icon">⬇</div>
+    <h1>yt-downloader</h1>
+    <p>วาง URL · เลือกรูปแบบ · ดาวน์โหลด</p>
+</div>
+""", unsafe_allow_html=True)
 
-# Status bar
-col_s1, col_s2 = st.columns([3, 1])
-with col_s1:
-    ytdlp_ok = check_yt_dlp()
-    ffmpeg_ok = check_ffmpeg()
-    if ytdlp_ok and ffmpeg_ok:
-        st.success(f"✓ พร้อมใช้งาน  ·  yt-dlp {get_yt_dlp_version()}")
-    else:
-        issues = []
-        if not ytdlp_ok:
-            issues.append("yt-dlp ไม่พบ")
-        if not ffmpeg_ok:
-            issues.append("ffmpeg ไม่พบ")
-        st.warning("⚠ " + " · ".join(issues))
+# ── Status ──
+ytdlp_ok = check_yt_dlp()
+ffmpeg_ok = check_ffmpeg()
+if ytdlp_ok and ffmpeg_ok:
+    ver = get_yt_dlp_version()
+    st.markdown(f'<span class="pill pill-ok">พร้อมใช้งาน · yt-dlp {ver}</span>', unsafe_allow_html=True)
+else:
+    issues = []
+    if not ytdlp_ok:
+        issues.append("yt-dlp")
+    if not ffmpeg_ok:
+        issues.append("ffmpeg")
+    st.markdown(f'<span class="pill pill-warn">ไม่พบ {" · ".join(issues)}</span>', unsafe_allow_html=True)
 
-# URL Input
-st.markdown("### 📎 URL")
+# ── URL Input Card ──
+st.markdown('<div class="card"><div class="card-label">URL</div>', unsafe_allow_html=True)
 url_input = st.text_area(
-    "วาง URL ที่นี่ (หลาย URL ได้ — บรรทัดละ 1)",
-    height=100,
-    placeholder="https://www.youtube.com/watch?v=...\nhttps://www.youtube.com/watch?v=...",
+    "url_input",
+    height=90,
+    placeholder="วาง URL ที่นี่  ·  หลายลิงก์ได้ (บรรทัดละ 1)",
     label_visibility="collapsed",
 )
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Settings
-with st.expander("⚙️ ตั้งค่า", expanded=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        fmt = st.radio("รูปแบบ", ["mp3", "mp4"], horizontal=True)
-    with col2:
-        if fmt == "mp3":
-            audio_q = st.selectbox("คุณภาพเสียง", [
-                "best (VBR ~245kbps)", "320kbps", "256kbps",
-                "192kbps", "128kbps", "96kbps", "64kbps",
-            ])
-            video_q = "best"
-        else:
-            video_q = st.selectbox("คุณภาพวิดีโอ", [
-                "best", "2160p (4K)", "1440p (2K)", "1080p (Full HD)",
-                "720p (HD)", "480p (SD)", "360p", "240p", "144p",
-            ])
-            audio_q = st.selectbox("คุณภาพเสียง", [
-                "best (VBR ~245kbps)", "320kbps", "256kbps",
-                "192kbps", "128kbps", "96kbps", "64kbps",
-            ])
+# ── Settings Card ──
+st.markdown('<div class="card"><div class="card-label">ตั้งค่า</div>', unsafe_allow_html=True)
+col1, col2 = st.columns(2)
+with col1:
+    fmt = st.radio("รูปแบบ", ["mp3", "mp4"], horizontal=True, label_visibility="collapsed")
+with col2:
+    if fmt == "mp3":
+        audio_q = st.selectbox("คุณภาพเสียง", [
+            "best (VBR ~245kbps)", "320kbps", "256kbps",
+            "192kbps", "128kbps", "96kbps", "64kbps",
+        ])
+        video_q = "best"
+    else:
+        video_q = st.selectbox("คุณภาพวิดีโอ", [
+            "best", "2160p (4K)", "1440p (2K)", "1080p (Full HD)",
+            "720p (HD)", "480p (SD)", "360p", "240p", "144p",
+        ])
+        audio_q = st.selectbox("คุณภาพเสียง", [
+            "best (VBR ~245kbps)", "320kbps", "256kbps",
+            "192kbps", "128kbps", "96kbps", "64kbps",
+        ])
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Action Buttons
+# ── Action Buttons ──
 col_b1, col_b2, col_b3 = st.columns([1, 2, 1])
-
 with col_b1:
-    fetch_clicked = st.button("🔍 ดึงชื่อ", use_container_width=True)
-
+    fetch_clicked = st.button("ดึงชื่อ", use_container_width=True)
 with col_b2:
-    download_clicked = st.button("⬇️ ดาวน์โหลด", type="primary", use_container_width=True)
-
+    download_clicked = st.button("ดาวน์โหลด", type="primary", use_container_width=True)
 with col_b3:
-    history_clicked = st.button("📜 ประวัติ", use_container_width=True)
+    history_clicked = st.button("ประวัติ", use_container_width=True)
 
-# Parse URLs
+# ── Parse URLs ──
 urls = [u.strip() for u in url_input.strip().splitlines() if u.strip()] if url_input else []
 
-# Fetch Titles
+# ── Fetch Titles ──
 if fetch_clicked:
     if not urls:
         st.warning("กรุณาใส่ URL ก่อน")
@@ -377,25 +541,39 @@ if fetch_clicked:
         with st.spinner("กำลังดึงชื่อ..."):
             titles = fetch_titles(urls)
         if titles:
-            st.markdown("#### 📋 รายการ")
+            st.markdown('<div class="card"><div class="card-label">รายการ</div>', unsafe_allow_html=True)
             for i, t in enumerate(titles, 1):
-                st.text(f"  {i}. {t}")
+                st.markdown(
+                    f'<div style="color:#aaa;font-size:0.85rem;padding:0.2rem 0;">'
+                    f'<span style="color:#555">{i}.</span> {t}</div>',
+                    unsafe_allow_html=True,
+                )
+            st.markdown('</div>', unsafe_allow_html=True)
 
-# Download
+# ── Download ──
 if download_clicked:
     if not urls:
         st.warning("กรุณาใส่ URL ก่อน")
     else:
         st.markdown("---")
-        st.markdown(f"#### ⬇️ กำลังดาวน์โหลด {len(urls)} รายการ")
-        st.markdown(f"**{fmt.upper()}** · วิดีโอ: {video_q} · เสียง: {audio_q}")
+        st.markdown(
+            f'<div style="color:#888;font-size:0.82rem;margin-bottom:0.8rem;">'
+            f'{fmt.upper()} · {len(urls)} รายการ · เสียง {audio_q}'
+            f'{"" if fmt == "mp3" else f" · วิดีโอ {video_q}"}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
         total_success = 0
         total_failed = 0
         downloaded_files = []
 
         for idx, url in enumerate(urls, 1):
-            st.markdown(f"**▸ [{idx}/{len(urls)}]** `{url[:80]}{'...' if len(url) > 80 else ''}`")
+            st.markdown(
+                f'<div style="color:#555;font-size:0.8rem;margin-top:0.5rem;">'
+                f'[{idx}/{len(urls)}] {url[:70]}{"..." if len(url) > 70 else ""}</div>',
+                unsafe_allow_html=True,
+            )
 
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -409,24 +587,31 @@ if download_clicked:
             if success and file_path:
                 total_success += 1
                 progress_bar.progress(1.0)
-                status_text.markdown(f'<span class="status-success">✓ สำเร็จ: {title}</span>',
-                                     unsafe_allow_html=True)
+                status_text.markdown(
+                    f'<div class="result-item result-ok">'
+                    f'<div class="r-title">{title}</div>'
+                    f'<div class="r-sub">ดาวน์โหลดสำเร็จ</div></div>',
+                    unsafe_allow_html=True,
+                )
                 downloaded_files.append((file_path, title))
             else:
                 total_failed += 1
-                status_text.markdown(f'<span class="status-error">✗ ล้มเหลว: {title}</span>',
-                                     unsafe_allow_html=True)
+                status_text.markdown(
+                    f'<div class="result-item result-fail">'
+                    f'<div class="r-title">{title}</div>'
+                    f'<div class="r-sub">ล้มเหลว</div></div>',
+                    unsafe_allow_html=True,
+                )
 
         # Summary
         st.markdown("---")
         if total_failed == 0:
-            st.success(f"🎉 ดาวน์โหลดเสร็จสิ้น — สำเร็จ {total_success} รายการ")
+            st.success(f"สำเร็จทั้งหมด {total_success} รายการ")
         else:
             st.warning(f"สำเร็จ {total_success} · ล้มเหลว {total_failed}")
 
-        # Download buttons for each file
+        # Download buttons
         if downloaded_files:
-            st.markdown("#### 📥 ดาวน์โหลดไฟล์")
             for file_path, title in downloaded_files:
                 try:
                     with open(file_path, "rb") as f:
@@ -434,39 +619,44 @@ if download_clicked:
                     file_name = os.path.basename(file_path)
                     mime = "audio/mpeg" if fmt == "mp3" else "video/mp4"
                     st.download_button(
-                        label=f"📥 {file_name}",
+                        label=f"↓  {file_name}",
                         data=file_data,
                         file_name=file_name,
                         mime=mime,
                         use_container_width=True,
                     )
                 except Exception as e:
-                    st.error(f"ไม่สามารถอ่านไฟล์: {e}")
+                    st.error(f"อ่านไฟล์ไม่ได้: {e}")
 
-# History
+# ── History ──
 if history_clicked:
     st.markdown("---")
-    st.markdown("#### 📜 ประวัติดาวน์โหลด")
     history = load_history()
     if not history:
         st.info("ยังไม่มีประวัติ")
     else:
-        for h in reversed(history[-30:]):
-            status_icon = "✅" if h.get("status") == "สำเร็จ" else "❌"
+        st.markdown('<div class="card"><div class="card-label">ประวัติล่าสุด</div>', unsafe_allow_html=True)
+        for h in reversed(history[-20:]):
+            icon = "●" if h.get("status") == "สำเร็จ" else "○"
+            color = "#10b981" if h.get("status") == "สำเร็จ" else "#555"
+            title_text = h.get("title", h.get("url", ""))
+            if len(title_text) > 55:
+                title_text = title_text[:55] + "…"
             st.markdown(
-                f"{status_icon} **{h.get('date', '')}** · "
-                f"`{h.get('format', '').upper()}` · "
-                f"{h.get('title', h.get('url', ''))}"
+                f'<div class="hist-item">'
+                f'<span style="color:{color};margin-right:0.5rem;">{icon}</span>'
+                f'<span class="hist-title">{title_text}</span>'
+                f'<span class="hist-meta">{h.get("format","").upper()} · {h.get("date","")}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
             )
-    if st.button("🗑️ ล้างประวัติ"):
+        st.markdown('</div>', unsafe_allow_html=True)
+    if st.button("ล้างประวัติ", use_container_width=False):
         save_history([])
         st.rerun()
 
-# Footer
-st.markdown("---")
+# ── Footer ──
 st.markdown(
-    '<p style="text-align:center; color:#555; font-size:0.8rem;">'
-    'Made with ❤️ · Powered by yt-dlp + Streamlit'
-    '</p>',
+    '<div class="footer">yt-downloader · yt-dlp + streamlit</div>',
     unsafe_allow_html=True,
 )
