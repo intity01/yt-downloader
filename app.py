@@ -48,6 +48,9 @@ LANG = {
         "supported": "แพลตฟอร์มที่รองรับ",
         "preview": "ตัวอย่าง",
         "unlimited": "ไม่จำกัด",
+        "cookies": "อัปโหลด Cookies",
+        "cookies_help": "ใช้ cookies.txt เพื่อดาวน์โหลดวิดีโอที่ต้องล็อกอิน หรือข้ามข้อจำกัดบอท",
+        "cookies_loaded": "โหลด cookies แล้ว",
     },
     "EN": {
         "hero_sub": "Paste URL · Choose format · Download",
@@ -78,6 +81,9 @@ LANG = {
         "supported": "Supported platforms",
         "preview": "Preview",
         "unlimited": "Unlimited",
+        "cookies": "Upload Cookies",
+        "cookies_help": "Use cookies.txt to download login-required or bot-restricted videos",
+        "cookies_loaded": "Cookies loaded",
     },
 }
 
@@ -385,7 +391,7 @@ def get_yt_dlp_version() -> str:
 
 
 # ===== Fetch info (title + thumbnail) =====
-def fetch_video_info(urls: list[str]) -> list[dict]:
+def fetch_video_info(urls: list[str], cookies_path: str | None = None) -> list[dict]:
     """Return list of {title, thumbnail, duration, url}"""
     results = []
     for url in urls:
@@ -394,8 +400,10 @@ def fetch_video_info(urls: list[str]) -> list[dict]:
                 sys.executable, "-m", "yt_dlp",
                 "--no-download", "--flat-playlist",
                 "--print", "%(title)s\t%(thumbnail)s\t%(duration_string)s",
-                url,
             ]
+            if cookies_path and os.path.exists(cookies_path):
+                cmd += ["--cookies", cookies_path]
+            cmd.append(url)
             result = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=45,
                 encoding="utf-8", errors="replace",
@@ -420,7 +428,8 @@ def fetch_video_info(urls: list[str]) -> list[dict]:
 # ===== Download =====
 def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
                     allow_playlist: bool, max_size_mb: int | None,
-                    progress_bar, status_text, log_container):
+                    progress_bar, status_text, log_container,
+                    cookies_path: str | None = None):
     """Download a single URL and return (success, file_path, title)"""
     try:
         audio_br = "0"
@@ -448,6 +457,10 @@ def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
                "--extractor-args", "youtube:player_client=android,web",
                "--user-agent", "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
                ]
+
+        # ใส่ cookies ถ้ามี
+        if cookies_path and os.path.exists(cookies_path):
+            cmd += ["--cookies", cookies_path]
 
         if not allow_playlist:
             cmd.append("--no-playlist")
@@ -625,6 +638,19 @@ with opt_col2:
     max_size_mb = SIZE_LIMITS.get(size_limit_str)
 st.markdown('</div>', unsafe_allow_html=True)
 
+# ── Cookies Upload (ช่วย bypass login / bot detection) ──
+cookies_path = None
+with st.expander(f"🍪 {t['cookies']}"):
+    st.caption(t["cookies_help"])
+    cookies_file = st.file_uploader(
+        "cookies.txt", type=["txt"], label_visibility="collapsed",
+    )
+    if cookies_file is not None:
+        cookies_path = os.path.join(tempfile.gettempdir(), "yt_cookies.txt")
+        with open(cookies_path, "wb") as cf:
+            cf.write(cookies_file.getvalue())
+        st.markdown(f'<span class="pill pill-ok">{t["cookies_loaded"]}</span>', unsafe_allow_html=True)
+
 # ── Action Buttons ──
 col_b1, col_b2, col_b3 = st.columns([1, 2, 1])
 with col_b1:
@@ -643,7 +669,7 @@ if fetch_clicked:
         st.warning(t["no_url"])
     else:
         with st.spinner(t["fetching"]):
-            infos = fetch_video_info(urls)
+            infos = fetch_video_info(urls, cookies_path=cookies_path)
         if infos:
             st.markdown(f'<div class="card"><div class="card-label">{t["list"]} — {len(infos)} {t["items"]}</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -696,6 +722,7 @@ if download_clicked:
                 url, fmt, audio_q, video_q,
                 allow_playlist, max_size_mb,
                 progress_bar, status_text, log_container,
+                cookies_path=cookies_path,
             )
 
             if success and file_path:
