@@ -443,16 +443,14 @@ def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
                 pass
 
         template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
-        cmd = [sys.executable, "-m", "yt_dlp", "--newline"]
+        cmd = [sys.executable, "-m", "yt_dlp", "--newline",
+               "--no-cache-dir", "--no-warnings"]
 
         if not allow_playlist:
             cmd.append("--no-playlist")
 
-        # Size limit
-        if max_size_mb:
-            cmd += ["--max-filesize", f"{max_size_mb}M"]
-
         if fmt == "mp3":
+            # --max-filesize doesn't work with -x, skip it for audio
             cmd += [
                 "-x", "--audio-format", "mp3",
                 "--audio-quality", audio_br,
@@ -467,13 +465,15 @@ def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
                 vf = (f"bestvideo[height<={video_h}][ext=mp4]+bestaudio[ext=m4a]"
                       f"/best[height<={video_h}]")
             cmd += ["-f", vf, "--merge-output-format", "mp4", "-o", template]
+            if max_size_mb:
+                cmd += ["--max-filesize", f"{max_size_mb}M"]
             if audio_br != "0":
                 cmd += ["--postprocessor-args", f"ffmpeg:-b:a {audio_br}"]
 
         cmd.append(url)
 
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding="utf-8", errors="replace",
         )
 
@@ -505,11 +505,18 @@ def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
             if any(k in line for k in [
                 "[download]", "[ExtractAudio]", "Destination",
                 "[Merger]", "[info]", "Deleting", "has already",
+                "ERROR", "error", "WARNING", "File is larger",
             ]):
                 logs.append(line)
                 log_container.code("\n".join(logs[-12:]), language=None)
 
         process.wait()
+
+        # Capture stderr for error info
+        stderr_output = process.stderr.read().strip() if process.stderr else ""
+        if stderr_output and process.returncode != 0:
+            logs.append(f"STDERR: {stderr_output[:300]}")
+            log_container.code("\n".join(logs[-12:]), language=None)
 
         if process.returncode == 0:
             files = glob.glob(os.path.join(DOWNLOAD_DIR, f"*.{fmt}"))
