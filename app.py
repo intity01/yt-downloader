@@ -457,6 +457,7 @@ def download_single(url: str, fmt: str, audio_quality: str, video_quality: str,
                 "-x", "--audio-format", "mp3",
                 "--audio-quality", audio_br,
                 "--embed-thumbnail",
+                "--convert-thumbnails", "jpg",
                 "-o", template,
             ]
         else:
