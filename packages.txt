@@ -1,4 +1,1 @@
-packages:
-  yq:
-    apt:
-      - ffmpeg
+ffmpeg
